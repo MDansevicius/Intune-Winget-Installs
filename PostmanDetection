@@ -1,0 +1,31 @@
+##What is the latest version Toolbox
+$JBNSearch = winget.exe search -e --id Postman.Postman --accept-source-agreements
+$JBNOnlineVersion = (-split $JBNSearch[-1])[-2]
+
+##What is the version installed
+$JBNLocalSearch = winget.exe list -e --id Postman.Postman
+$JBNCheckIfAvailavbleExist = (-split $JBNLocalSearch[-3])[-2]
+if($JBNCheckIfAvailavbleExist -eq "Available")
+{
+    $JBNLocalVersion = (-split $JBNLocalSearch[-1])[-3]
+}
+else
+{
+    $JBNLocalVersion = (-split $JBNLocalSearch[-1])[-2]
+}
+if($JBNLocalVersion -eq "input")
+{
+    exit 1
+ #Detection failed
+}
+if($JBNLocalVersion -ge $JBNOnlineVersion)
+{
+    Write-Output "The Device got the latest version of Postman.Postman installed"
+ exit 0
+ #Detection success
+}
+else
+{
+ exit 1
+ #Detection failed
+}
