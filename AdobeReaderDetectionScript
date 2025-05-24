@@ -1,0 +1,48 @@
+# Specify the app's winget ID here
+$AppWingetID = "Adobe.Acrobat.Reader.64-bit"  # Replace with your application's winget ID
+
+# Resolve the Winget path
+$ResolveWingetPath = Resolve-Path "C:\Program Files\WindowsApps\Microsoft.DesktopAppInstaller_*_x64__8wekyb3d8bbwe\winget.exe" -ErrorAction SilentlyContinue
+if ($ResolveWingetPath -and $ResolveWingetPath.Path) {
+    $WingetPath = $ResolveWingetPath[-1].Path
+} else {
+    Write-Output "Failed to resolve the path for winget.exe"
+    exit 1
+}
+
+# Get the latest available version of the application from winget
+$AppSearch = & "$WingetPath" search -e --id $AppWingetID --accept-source-agreements
+$AppSearch | ForEach-Object { $_ -match "([0-9]+\.[0-9]+\.[0-9]+)" } | Out-Null
+$AppOnlineVersion = $matches[1]
+
+# Get the installed version of the application
+$AppLocalSearch = & "$WingetPath" list -e --id $AppWingetID
+$AppLocalSearch | ForEach-Object { $_ -match "([0-9]+\.[0-9]+\.[0-9]+)" } | Out-Null
+$AppLocalVersion = $matches[1]
+
+# Ensure a valid installed version was detected
+if (-not $AppLocalVersion) {
+    Write-Output "Failed to detect the installed version of the application"
+    exit 1
+}
+
+# Compare installed version with online version
+if ([version]$AppLocalVersion -ge [version]$AppOnlineVersion) {
+    Write-Output "The device has the latest version of the application installed ($AppLocalVersion)"
+    exit 0
+} else {
+    Write-Output "A new version of the application is available: $AppOnlineVersion (Installed: $AppLocalVersion)"
+    
+    # Attempt to update the application to the latest version
+    Write-Output "Updating the application to version $AppOnlineVersion..."
+    $UpdateResult = & "$WingetPath" install --id $AppWingetID --exact --silent
+    
+    # Check if the update was successful
+    if ($UpdateResult -like "*success*") {
+        Write-Output "The application has been updated successfully."
+        exit 0  # Success
+    } else {
+        Write-Output "Failed to update the application."
+        exit 1  # Failure
+    }
+}
