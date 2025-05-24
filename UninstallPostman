@@ -1,0 +1,1 @@
+winget.exe uninstall --id Postman.Postman --silent --accept-source-agreements
